@@ -1,0 +1,1070 @@
+---
+title: "EDAV Final Project: 311 Data Parking Violation Analysis"
+author: "STATW4701 Team: Forever Best"
+date: "May 8, 2016"
+output: html_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=11, fig.height=7, echo=FALSE, warning=FALSE, message=FALSE)
+
+```
+
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE,results='asis', tidy=FALSE, cache=TRUE}
+
+#install.packages("leaflet")
+#install.packages("maps")
+#install.packages("mapproj")
+#install.packages("RColorBrewer")
+#install.packages("classInt")
+#install.packages("googleVis")
+#install.packages("stringi")
+#install.packages("lubridate")
+#install.packages("readxl")
+
+
+
+library(leaflet)
+library(maps)
+library(mapproj)
+library(RColorBrewer)
+library(classInt)
+library(googleVis)
+library(stringi) #capitalize letters
+library(lubridate)#extract year from date
+library(networkD3)
+
+
+
+setwd("C:/WorkStation/EDAV/Final_Project/")
+
+#import data from year 2010 to 2016
+
+data_311 <- read.csv("C:/WorkStation/EDAV/Final_Project/data/final_project_cleaned_data.csv", 
+                     header= TRUE, sep=",",
+                     quote = "\"", dec =".")
+
+data_311$City <- stri_trans_totitle(data_311$City )
+
+data_311$Borough <- stri_trans_totitle(data_311$Borough )
+```
+
+##Introduction
+311 is New York City's main source of government information and non-emergency services. Whether you are a resident, business owner, or visitor, help is just a click, text, or call away. 311 is a service line provided by the City of New York. This is the city's government information hotline. A plethora of information is available at this hotline on city services such as programs for the elderly, garbage collection schedules, parking information, and much more. Complaints and requests for various city agencies are also processed here. 311 looks after services like environment, health, cleaning and sanitation, parking etc.
+
+This project is concerned only about the illegal parking and blocking driveway data. Focusing on this important and rich data is essential to come up with comprehensive and rigid analysis. Primarily findings have been carried out with regards to these complaints' resolution as well as some predictions utilizing weather data. Moreover, complaints' details have been analyzed with regards to geographical locations (i.e. different boroughs in New York City).   
+
+
+##Project Scope
+The project purpose is to assess and mitigate the short-term and long-term impacts of the Illegal parking do some analysis on 311 data related to illegal parking and blocking driveway. A detailed description of the proposed project and a detailed analysis of the long-term impacts on NYC traffic include parking conditions in these densely populated areas and business district. For instance, the following polygon map based on NYC ZIP shows the comparision of complaints counts vs. Population in each region with the same NYC ZIP. 
+
+![polygon_map34](C:\WorkStation\EDAV\Final_Project\image\polygon_map34.png)
+The legends shows that the larger the population or complaints counts are, the darker the color will be. Compare the two maps, it is obvious that the population and complaints are highly positive related. The larger the population is in one region, the more complaints there are. However,the upwest Manhattan is a special case. Although the poplation in upwest Manhattan is large, but there are not that much complatins around that area. When you click each polygon you will see a popup showing detail information about each area's city name, ZIP code, population and complaints counts.Just as shown below.
+![polyton_map_click](C:\WorkStation\EDAV\Final_Project\image\polyton_map_click.png)
+
+#### **To have an interactive experience with this polygon map, please check the Polygon Map Html Files in our project folder.** 
+
+
+For another example, from the following interactive calendar for "Daily illegal parking and Daily Blocked Driveway count in New York City", we can see the pattern that more complaints happened for both of two types of complaints in the recent three years.
+
+
+
+
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE,results='asis', tidy=FALSE, cache=TRUE}
+
+######################################################################
+#                                                                    #
+#     Calendar: Daily Illegal Parking Count in New York City         #
+#                                                                    #
+######################################################################
+op <- options(gvis.plot.tag='chart') 
+
+illegal_parking_calendar <- subset(data_311, Complaint.Type=="Illegal Parking")
+illegal_parking_calendar$Created.Date <-  as.numeric(as.Date(illegal_parking_calendar$Created.Date,format='%m/%d/%Y'))
+illegal_parking_calendar$Created.Date <- as.Date(illegal_parking_calendar$Created.Date,origin="1970-01-01")
+for_calendar_illegal_parking <- as.data.frame(table(illegal_parking_calendar$Created.Date))
+colnames(for_calendar_illegal_parking) <- c("Date","Illegal_Parking_Count")
+
+for_calendar_illegal_parking$Date <- as.Date(for_calendar_illegal_parking$Date)
+for_calendar_illegal_parking$Date <- as.numeric(for_calendar_illegal_parking$Date)
+for_calendar_illegal_parking$Date <- as.Date(for_calendar_illegal_parking$Date,origin="1970-01-01")
+
+
+c2 <- gvisCalendar(for_calendar_illegal_parking, datevar="Date", numvar="Illegal_Parking_Count",
+                   options=list(
+                       title="Daily Illegal Parking Count in New York City",
+                       height=700,
+                       calendar="{yearLabel: { fontName: 'Times-Roman',
+                       fontSize: 32, color: '#1A8763', bold: true},
+                       cellSize: 9,
+                       cellColor: { stroke: 'red', strokeOpacity: 0.2 },
+                       focusedCellColor: {stroke:'red'}}")
+                   )
+#plot(c2)
+
+
+
+
+######################################################################
+#                                                                    #
+#     Calendar: Daily Blocked Driveway Count in New York City        #
+#                                                                    #
+######################################################################
+
+Blocked_Driveway_calendar <- subset(data_311, Complaint.Type=="Blocked Driveway")
+
+Blocked_Driveway_calendar$Created.Date <- as.numeric(as.Date(Blocked_Driveway_calendar$Created.Date,format='%m/%d/%Y'))
+Blocked_Driveway_calendar$Created.Date <- as.Date(Blocked_Driveway_calendar$Created.Date,origin="1970-01-01")
+for_calendar_Blocked_Driveway<- as.data.frame(table(Blocked_Driveway_calendar$Created.Date))
+colnames(for_calendar_Blocked_Driveway) <- c("Date","Blocked_Driveway_Count")
+
+for_calendar_Blocked_Driveway$Date <- as.Date(for_calendar_Blocked_Driveway$Date)
+for_calendar_Blocked_Driveway$Date <- as.numeric(for_calendar_Blocked_Driveway$Date)
+for_calendar_Blocked_Driveway$Date <- as.Date(for_calendar_Blocked_Driveway$Date,origin="1970-01-01")
+
+
+c3 <- gvisCalendar(for_calendar_Blocked_Driveway, datevar="Date", numvar="Blocked_Driveway_Count",
+                   options=list(
+                       title="Daily Blocked Driveway Count in New York City",
+                       height=700,
+                       calendar="{yearLabel: { fontName: 'Times-Roman',
+                       fontSize: 32, color: '#1A8763', bold: true},
+                       cellSize: 9,
+                       cellColor: { stroke: 'red', strokeOpacity: 0.2 },
+                       focusedCellColor: {stroke:'red'}}")
+)
+#plot(c3)
+
+
+c23 <- gvisMerge(c2,c3, horizontal=TRUE) 
+
+plot(c23)
+
+```
+
+
+It is obvious to see that on January 25 and January 26 in 2016, the cell color for both calenars are both dark.We are curious why it happened and got the answer after searching for news happened on those days. It is because of heavy snonw storm. From [Driveways Buried In Snow](http://www.theyeshivaworld.com/news/headlines-breaking-stories/379186/nyc-residents-deal-with-cars-driveways-buried-in-snow.html) we know that snow-covered cars and driveways blocked by snow from plows are causing headaches for many New Yorkers.Just as the picture shown below.
+ 
+![news1](C:\WorkStation\EDAV\Final_Project\image\news1.png)
+
+
+
+In addition, the project is to assess how many people got tickets and attempted any sort of violations which have impacted the rate of increase of tickets handed over by the police and how many vehicles have towed to the safe position once breakdown occurs. Identification of appropriate measures to mitigate the proposed project impacts, including physical and operational improvements (with respect to the outline proposed by our team) and project impact monitoring with respect to the data analysis on monthly and  quarterly basis.
+
+
+We created a google motion chart to explore all of these problems. By chosing the x variable and y variable, we explored a lot of information here.The following are two examples. 
+
+
+![motionChart1](C:\WorkStation\EDAV\Final_Project\image\motionChart1.png)
+
+![motionChart4](C:\WorkStation\EDAV\Final_Project\image\motionChart4.png)
+
+
+
+<br>
+The project plan also includes thorough analysis of the proposed project's transportation impacts on ticketing, towing, and illegal parking throughout the relevant study area in all the five boroughs of New York; Manhattan, The Bronx, Brooklyn, Queens and Staten Island.
+One of the main aims of our team Is to analyze New York City parking ticket data to present some patterns on ticket violation issuance, focusing on understanding the relationship between the location and type of violation. New York City's major parking ticketing operations require an extensive infrastructure of courts and resources to resolve tickets; about 10 million tickets are issued each year and 1.2 million of them are contested in hearings, with only slightly more than half resulting in a violation paid. To improve the system's efficiency and trim the administrative log, the team has fetched information from different sources, including verbal conversations done by the team.
+
+
+##Illegal Parking Vs. Blocking driveway
+Illegal parking can be a problem for residents in any county at times. A vehicle causing an obstruction is one which has been parked and left unattended in such a way that it is considered to be a hazard to other road or footway users. Enforcement of parking restrictions aims to reduce the number of illegally-parked vehicles. This, in turn, will reduce traffic congestion, improve road safety, and improve accessibility for all road users.
+You can report a non-emergency vehicle that is illegally parked, including vehicles and motorcycles that are:
+
+* Violating any posted parking regulation.
+* Double parked or parked over 7 days in the same spot.
+* Blocking a bus stop, crosswalk, hydrant, sidewalk, or parking space for people with disabilities.
+
+You can also report commercial vehicles that are parked overnight on a residential street. Officers from your local police precinct will respond when they are not handling emergency situations.
+You can report a vehicle that is partially or completely blocking your driveway.  The police may ticket the vehicle. If the vehicle has a ticket and you want it moved, you can contact a private towing company. The vehicle owner will have to pay any fees charged for towing.
+
+##Primarily Analysis
+
+Parking violations are a continual presence and source of annoyance in the lives of many residents of large modern cities, especially New York City.  Especially with on-street parking relatively difficult to find in certain districts in the City, tickets can make commuting or performing errands by car particularly burdensome, restricting the hours and locations that parking is available; So to analyze New York City parking ticket data and pattern of ticket violation issuance, we have to focus on understanding the relationship between the location and type of violation. According to the dataset, nearly 43% of all the ticket issued in NYC, were issued in Manhattan followed by Brooklyn at 22.6%, which are the main business districts in NYC. This borough distribution can also be explained by the fact that tickets are issued disproportionately on weekdays; weighted by the frequency of each day where 10.6% and 4.10% of tickets were issued on Saturday and Sunday, respectively, while each weekday accounted for between 15.8%-18.9% of tickets. Since on weekdays there is a larger flow to the city's business districts, tickets are more likely to be issued than in residential borough. About 61% of all the complaints end up in the police action whereas around 43% end up with the issuance of ticket.
+More than 55% of all tickets in winters were issued to vehicles that received two or more tickets in a month; the highest count was a vehicle that received 209 tickets in the month of March.  While almost 45% of tickets were issued to vehicles receiving a single ticket in the month, these vehicles accounted for about 74% of all unique vehicles; furthermore, about 21% of tickets were issued to vehicles receiving 6 or more tickets in the month-these comprised only about 2.5% of all unique vehicles.  About 73% of tickets were issued to passenger vehicles, though they accounted for 86% of unique vehicles; commercial vehicles accounted for 22% of tickets but only about 8.5% of vehicles.  
+
+The ones who are frequent offenders are commercial vehicles. When analysis is restricted to passenger vehicles, however, we see that at low levels of ticket frequency (single offenders or those receiving between 2 and 4 tickets in the month) each violation category is fairly likely. If passenger vehicles receive a lot of tickets (e.g., at least 34), the violation is overwhelmingly likely to be for illegal stopping/parking or blocking traffic. This may be partially because fines like street cleaning can include a punishment of vehicle towing, which can be a much bigger hassle to deal with than just simply paying a fine.
+It is also expected that in coming years as the population of NYC increases and business districts are the more liable to the illegal parking and issuance of tickets because of the fact that most of the people move to the big city in search of jobs, education etc.
+
+### **Dataset**
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE,results='asis', tidy=FALSE, cache=TRUE}
+library(dplyr)
+library(plyr)
+library(googleVis)
+op <- options(gvis.plot.tag="chart")
+library(circlize)
+#install.packages("googleVis")
+setwd("C:/WorkStation/EDAV/Final_Project/")
+
+
+# install.packages(c("devtools","RJSONIO", "knitr", "shiny", "httpuv"))
+# library(devtools)
+# install_github("mages/googleVis")
+
+data <- read.csv('C:/WorkStation/EDAV/Final_Project/data/final_project_clean_data.csv', header=T, na.strings=c("","NA"))
+data <- data[-which(is.na(data$Closed.Date)),]
+data_f = data.frame(data)
+
+
+agency_borough_complaint_count <- count(data_f, c('Agency', 'Borough', 'Complaint.Type'))
+
+# agency list
+agency_count <- count(data_f, c('Agency'))
+agency_count_top5 = agency_count[order(agency_count$freq, decreasing=TRUE), ]
+
+agency_list = agency_count_top5$Agency
+borough_list = unique(agency_borough_complaint_count$Borough)
+
+tmp_agency_borough_complaint_count = data.frame(as.factor(1), as.factor(1), as.factor(1), as.integer(1)) 
+colnames(tmp_agency_borough_complaint_count) = colnames(agency_borough_complaint_count)
+
+for (i in 1:length(agency_list)) {
+  for (j in 1:length(borough_list)) {
+    tmp_agency_borough_complaint_count = rbind(tmp_agency_borough_complaint_count, agency_borough_complaint_count[(agency_borough_complaint_count$Agency == agency_list[i]) & (agency_borough_complaint_count$Borough == borough_list[j]), ])
+  }
+}
+tmp_agency_borough_complaint_count = tmp_agency_borough_complaint_count[-1, ]
+
+
+sankey1_part1 = tmp_agency_borough_complaint_count[, c("Agency", "Borough", "freq")]
+colnames(sankey1_part1) = c("from", "to", "freq")
+sankey1_part1 = aggregate(sankey1_part1$freq, by=list(from=sankey1_part1$from, to=sankey1_part1$to), FUN=sum)
+colnames(sankey1_part1) = c("from", "to", "freq")
+
+sankey1_part2 = tmp_agency_borough_complaint_count[, c("Borough", "Complaint.Type", "freq")]
+colnames(sankey1_part2) = c("from", "to", "freq")
+sankey1_part2$to = as.character(sankey1_part2$to)
+sankey1_part2[sankey1_part2$freq < 50, 'to'] <- "others"
+sankey1_part2$to = as.factor(sankey1_part2$to)
+
+sankey1_part3 = tmp_agency_borough_complaint_count[, c("Complaint.Type", "Agency", "freq")]
+colnames(sankey1_part3) = c("from", "to", "freq")
+sankey1_part3$from = as.character(sankey1_part3$from)
+sankey1_part3[sankey1_part3$freq < 50, 'from'] <- "others"
+sankey1_part3$from = as.factor(sankey1_part3$from)
+sankey1_part3 = aggregate(sankey1_part3$freq, by=list(from=sankey1_part3$from, to=sankey1_part3$to), FUN=sum)
+colnames(sankey1_part3) = c("from", "to", "freq")
+
+# sankey1_part1 : Agency - Borough
+# sankey1_part2 : Borough - Complaints
+# sankey1_part3 : Complaints - Borough
+
+## Complaints - Agency - Borough
+sankey_complaints_Agency_Borough_data = rbind(sankey1_part3, sankey1_part1)
+plot(
+    S1 <- gvisSankey(sankey_complaints_Agency_Borough_data, 
+                                                    from="from", 
+                                                    to="to", 
+                                                    weight="freq",
+                                                    options=list(
+                                                      width=800,
+                                                      sankey="{link:{color:{fill:'lightblue'}}}"
+                                                    )
+                                                  ))
+
+
+```
+
+The dataset has five years worth of data, or 735k records.
+All parking related complaints are handled by the NYPD.
+<br>
+There are two main complaint types:
+
+* Blocked Driveway
+* Illegal parking 
+    
+### Map Visualization of Illegal Parking and Blocked Driveway Complaints
+
+![polygon_map12](C:\WorkStation\EDAV\Final_Project\image\polygon_map12.png)
+This is a polygon map by NYC ZIP created using LeafletR package. The legend shows that the how the color matches the counts of complaints. You may check the complaints counts for each region by clicking the region on the map. 
+
+#### **If you want to have an interactive experience with the interactive polygon map, please check the polygon maps in our folder.**
+
+<br>
+
+### **Interactive map: Illegal Parking & Blocked Drivdway**
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE}
+
+#############################
+#                           #
+#           Map             #
+#                           #
+#############################
+
+#Illegal parking and blocked driveway
+#create data set
+#2015_2016 1:253886
+#2016 1:60883
+#test:1:100
+
+library(leaflet)
+
+data311_for_map <- data_311[c(2,3,6,7,17,20,25,51,52)]
+data311_Year15_16 <- data311_for_map[c(1:253886),]
+data311_Year16 <- data311_for_map[c(1:60883),]
+
+
+
+
+data311_Year16 <- data311_Year16[-which(is.na(data311_Year16$Latitude)), ]
+
+
+
+
+map1_illegal_parking <- subset(data311_Year16, Complaint.Type=="Illegal Parking")
+map1_blocked_drive_way <- subset(data311_Year16, Complaint.Type=="Blocked Driveway")
+
+
+
+
+
+
+#Popup content for map1
+
+content_map1_illegal_parking <-paste0("<strong>Complaint Type: </strong>", 
+                                      map1_illegal_parking$Complaint.Type, 
+                                      "<br><strong>Descriptor: </strong>", 
+                                      map1_illegal_parking$Descriptor,
+                                      "<br><strong>Borough: </strong>",
+                                      map1_illegal_parking$Borough,
+                                      "<br><strong>City: </strong>",
+                                      map1_illegal_parking$City,
+                                      "<br><strong>Start Date: </strong>",
+                                      map1_illegal_parking$Created.Date,
+                                      "<br><strong>End Date: </strong>",
+                                      map1_illegal_parking$Closed.Date,
+                                      "<br><strong>Status: </strong>",
+                                      map1_illegal_parking$Status)
+content_map1_blocked_drive_way <-paste0("<strong>Complaint Type: </strong>", 
+                                        map1_blocked_drive_way$Complaint.Type, 
+                                        "<br><strong>Descriptor: </strong>", 
+                                        map1_blocked_drive_way$Descriptor,
+                                        "<br><strong>Borough: </strong>",
+                                        map1_blocked_drive_way$Borough,
+                                        "<br><strong>City: </strong>",
+                                        map1_blocked_drive_way$City,
+                                        "<br><strong>Start Date: </strong>",
+                                        map1_blocked_drive_way$Created.Date,
+                                        "<br><strong>End Date: </strong>",
+                                        map1_blocked_drive_way$Closed.Date,
+                                        "<br><strong>Status: </strong>",
+                                        map1_blocked_drive_way$Status)
+
+
+
+```
+
+```{r, echo=FALSE, fig.width=11, fig.height=7}
+
+#map it!
+map1 <- leaflet() %>% 
+    
+    setView(lng = -74.006605, lat = 40.714623, zoom = 11) %>%
+    
+    # Add tiles as baseGroup  
+    addProviderTiles("CartoDB.DarkMatter",group = "Dark Map") %>%
+    addProviderTiles("OpenStreetMap", group = "Basic Map") %>%
+    addProviderTiles("Esri.WorldImagery", group = "Satellite Map") %>%
+    
+    addCircles( data = map1_illegal_parking , color = "#23D2D8", weight = 3, radius=60,  
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map1_illegal_parking), group = "Illegal Parking")%>%
+    addCircles( data = map1_blocked_drive_way, color = "#EA7956",weight = 3, radius=60, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map1_blocked_drive_way), group = "Blocked Drive Way")%>%
+    
+    # Layers control
+    addLayersControl(
+        baseGroups = c("Dark Map","Basic Map","Satellite Map"),
+        overlayGroups = c("Illegal Parking","Blocked Drive Way"),
+        
+        options = layersControlOptions(collapsed = FALSE)
+    ) %>% 
+    
+    addLegend("topright", colors = c("#23D2D8", "#EA7956"), 
+              labels = c("Illegal Parking Complaint", "Blocked Drive Way Complaint"),    
+              opacity = 2,  title = "Complaint Type" ) 
+
+map1
+
+```
+
+
+
+#### **You could explore this map by selecting the options. Click each point you will see detail information of each complaints. The data set used to create this map is the complaints for the year of 2016.**
+
+![leaflet_map1](C:\WorkStation\EDAV\Final_Project\image\leaflet_map1.png)
+![Complaints_By_Borough](C:\WorkStation\EDAV\Final_Project\image\Complaints_By_Borough.png)
+
+### Complaints Descriptors.
+There are nine descriptors for the two complaint types, as shown in the following interactive map. Each point represents a complaints in the year of 2016. You could see how they are distributed spacially. Click each point you will get detail of the comlaints. 
+
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE}
+#======================================================================================================
+#map3  2016 descriptor
+
+
+
+
+map3_BH <- subset(data311_Year16 , Descriptor == "Blocked Hydrant")
+map3_BS <- subset(data311_Year16, Descriptor == "Blocked Sidewalk")
+map3_COP <- subset(data311_Year16, Descriptor == "Commercial Overnight Parking")
+map3_DT <- subset(data311_Year16, Descriptor == "Detached Trailer")
+map3_DPV <- subset(data311_Year16, Descriptor == "Double Parked Vehicle")
+map3_NAPA <- subset(data311_Year16, Descriptor == "No Access / Partial Access")
+map3_OCS <- subset(data311_Year16, Descriptor == "Overnight Commercial Storage")
+map3_PPSV <- subset(data311_Year16, Descriptor == "Posted Parking Sign Violation")
+map3_UBL <- subset(data311_Year16, Descriptor == "Unauthorized Bus Layover")
+
+
+
+
+
+#Popup content for map1
+
+
+content_map3_BH <-paste0("<strong>Complaint Type: </strong>", 
+                         map3_BH$Complaint.Type, 
+                         "<br><strong>Descriptor: </strong>", 
+                         map3_BH$Descriptor,
+                         "<br><strong>Borough: </strong>",
+                         map3_BH$Borough,
+                         "<br><strong>City: </strong>",
+                         map3_BH$City,
+                         "<br><strong>Start Date: </strong>",
+                         map3_BH$Created.Date,
+                         "<br><strong>End Date: </strong>",
+                         map3_BH$Closed.Date,
+                         "<br><strong>Status: </strong>",
+                         map3_BH$Status)
+
+
+content_map3_BS <-paste0("<strong>Complaint Type: </strong>", 
+                         map3_BS$Complaint.Type, 
+                         "<br><strong>Descriptor: </strong>", 
+                         map3_BS$Descriptor,
+                         "<br><strong>Borough: </strong>",
+                         map3_BS$Borough,
+                         "<br><strong>City: </strong>",
+                         map3_BS$City,
+                         "<br><strong>Start Date: </strong>",
+                         map3_BS$Created.Date,
+                         "<br><strong>End Date: </strong>",
+                         map3_BS$Closed.Date,
+                         "<br><strong>Status: </strong>",
+                         map3_BS$Status)
+
+
+content_map3_COP <- paste0("<strong>Complaint Type: </strong>", 
+                           map3_COP$Complaint.Type, 
+                           "<br><strong>Descriptor: </strong>", 
+                           map3_COP$Descriptor,
+                           "<br><strong>Borough: </strong>",
+                           map3_COP$Borough,
+                           "<br><strong>City: </strong>",
+                           map3_COP$City,
+                           "<br><strong>Start Date: </strong>",
+                           map3_COP$Created.Date,
+                           "<br><strong>End Date: </strong>",
+                           map3_COP$Closed.Date,
+                           "<br><strong>Status: </strong>",
+                           map3_COP$Status)
+
+
+content_map3_DT <-paste0("<strong>Complaint Type: </strong>", 
+                         map3_DT$Complaint.Type, 
+                         "<br><strong>Descriptor: </strong>", 
+                         map3_DT$Descriptor,
+                         "<br><strong>Borough: </strong>",
+                         map3_DT$Borough,
+                         "<br><strong>City: </strong>",
+                         map3_DT$City,
+                         "<br><strong>Start Date: </strong>",
+                         map3_DT$Created.Date,
+                         "<br><strong>End Date: </strong>",
+                         map3_DT$Closed.Date,
+                         "<br><strong>Status: </strong>",
+                         map3_DT$Status)
+
+
+content_map3_DPV <-paste0("<strong>Complaint Type: </strong>", 
+                          map3_DPV$Complaint.Type, 
+                          "<br><strong>Descriptor: </strong>", 
+                          map3_DPV$Descriptor,
+                          "<br><strong>Borough: </strong>",
+                          map3_DPV$Borough,
+                          "<br><strong>City: </strong>",
+                          map3_DPV$City,
+                          "<br><strong>Start Date: </strong>",
+                          map3_DPV$Created.Date,
+                          "<br><strong>End Date: </strong>",
+                          map3_DPV$Closed.Date,
+                          "<br><strong>Status: </strong>",
+                          map3_DPV$Status)
+
+content_map3_NAPA <-paste0("<strong>Complaint Type: </strong>", 
+                           map3_NAPA$Complaint.Type, 
+                           "<br><strong>Descriptor: </strong>", 
+                           map3_NAPA$Descriptor,
+                           "<br><strong>Borough: </strong>",
+                           map3_NAPA$Borough,
+                           "<br><strong>City: </strong>",
+                           map3_NAPA$City,
+                           "<br><strong>Start Date: </strong>",
+                           map3_NAPA$Created.Date,
+                           "<br><strong>End Date: </strong>",
+                           map3_NAPA$Closed.Date,
+                           "<br><strong>Status: </strong>",
+                           map3_NAPA$Status)
+
+
+content_map3_OCS <-paste0("<strong>Complaint Type: </strong>", 
+                          map3_OCS$Complaint.Type, 
+                          "<br><strong>Descriptor: </strong>", 
+                          map3_OCS$Descriptor,
+                          "<br><strong>Borough: </strong>",
+                          map3_OCS$Borough,
+                          "<br><strong>City: </strong>",
+                          map3_OCS$City,
+                          "<br><strong>Start Date: </strong>",
+                          map3_OCS$Created.Date,
+                          "<br><strong>End Date: </strong>",
+                          map3_OCS$Closed.Date,
+                          "<br><strong>Status: </strong>",
+                          map3_OCS$Status)
+
+content_map3_PPSV <-paste0("<strong>Complaint Type: </strong>", 
+                           map3_PPSV$Complaint.Type, 
+                           "<br><strong>Descriptor: </strong>", 
+                           map3_PPSV$Descriptor,
+                           "<br><strong>Borough: </strong>",
+                           map3_PPSV$Borough,
+                           "<br><strong>City: </strong>",
+                           map3_PPSV$City,
+                           "<br><strong>Start Date: </strong>",
+                           map3_PPSV$Created.Date,
+                           "<br><strong>End Date: </strong>",
+                           map3_PPSV$Closed.Date,
+                           "<br><strong>Status: </strong>",
+                           map3_PPSV$Status)
+
+content_map3_UBL <-paste0("<strong>Complaint Type: </strong>", 
+                          map3_UBL$Complaint.Type, 
+                          "<br><strong>Descriptor: </strong>", 
+                          map3_UBL$Descriptor,
+                          "<br><strong>Borough: </strong>",
+                          map3_UBL$Borough,
+                          "<br><strong>City: </strong>",
+                          map3_UBL$City,
+                          "<br><strong>Start Date: </strong>",
+                          map3_UBL$Created.Date,
+                          "<br><strong>End Date: </strong>",
+                          map3_UBL$Closed.Date,
+                          "<br><strong>Status: </strong>",
+                          map3_UBL$Status)
+
+
+
+```
+
+
+```{r, echo=FALSE, fig.width=11, fig.height=7}
+
+
+
+
+#map it!
+map3 <- leaflet() %>% 
+    
+    setView(lng = -74.006605, lat = 40.714623, zoom = 11) %>%
+    
+    # Add tiles as baseGroup  
+    addProviderTiles("CartoDB.DarkMatter",group = "Dark Map") %>%
+    addProviderTiles("OpenStreetMap", group = "Basic Map") %>%
+    addProviderTiles("Esri.WorldImagery", group = "Satellite Map") %>%
+    
+    addCircles( data = map3_BH, color = "#FA5858",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_BH), group = "Blocked Hydrant")%>%
+    addCircles( data = map3_BS, color = "#B18904",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_BS), group = "Blocked Sidewalk")%>%
+    
+    addCircles( data = map3_COP, color = "#86B404",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_COP), group = "Commercial Overnight Parking")%>%
+    
+    addCircles( data = map3_DT, color = "#01DF01",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_DT), group = "Detached Trailer")%>%
+    
+    addCircles( data = map3_DPV, color = "#04B486",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_DPV), group = "Double Parked Vehicle")%>%
+    
+    addCircles( data = map3_NAPA, color = "#00BFFF",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_NAPA), group = "No Access / Partial Access")%>%
+    
+    addCircles( data = map3_OCS, color = "#58ACFA",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_OCS), group = "Overnight Commercial Storage")%>%
+    
+    addCircles( data = map3_PPSV, color = "#D358F7",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_PPSV), group = "Posted Parking Sign Violation")%>%
+    
+    addCircles( data = map3_UBL, color = "#FE2EF7",weight = 3, radius=20, 
+                stroke = TRUE, fillOpacity = 0.8, lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_map3_UBL), group = "Unauthorized Bus Layover")%>%
+    
+    
+    # Layers control
+    addLayersControl(
+        baseGroups = c("Dark Map","Basic Map","Satellite Map"),
+        overlayGroups = c("No Access / Partial Access",
+                          "Posted Parking Sign Violation","Blocked Hydrant","Commercial Overnight Parking",
+                          "Blocked Sidewalk","Double Parked Vehicle","Overnight Commercial Storage",
+                          "Unauthorized Bus Layover","Detached Trailer" ),
+        
+        options = layersControlOptions(collapsed = FALSE)
+    ) %>% 
+    
+    addLegend("bottomright", colors = c("#00BFFF", "#D358F7","#FA5858","#86B404","#B18904","#04B486","#58ACFA",
+                                        "#FE2EF7","#01DF01"), 
+              labels = c("No Access / Partial Access",
+                         "Posted Parking Sign Violation","Blocked Hydrant","Commercial Overnight Parking",
+                         "Blocked Sidewalk","Double Parked Vehicle","Overnight Commercial Storage",
+                         "Unauthorized Bus Layover","Detached Trailer"),    
+              opacity = 2,  title = "Descriptor" ) 
+
+map3
+
+```
+
+![descriptor_bar_chart](C:\WorkStation\EDAV\Final_Project\image\descriptor_bar_chart.png)
+
+The following is the complaints counts by descriptors and by boroughs.
+
+#### **Interactive Bar Chart**
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE}
+
+#############################
+#                           #
+#         Plotly            #
+#                           #
+#############################
+
+#install.packages("plotly")
+library(plotly)
+
+#import data 
+plotly_data <- data_311
+
+
+p1 <- ggplot(data = plotly_data, aes(x = Borough, fill = Descriptor)) +
+    geom_bar(position = "dodge")
+
+```
+
+```{r, echo=FALSE, fig.width=11, fig.height=5}
+ggplotly(p1)
+```
+
+###Regions with the most complaints and tickets
+
+Over 10 million tickets were issued during the last fiscal year. In Midtown North, 7.9 tickets are issued per person, while in Times Square that number balloons to 19.8 tickets per resident. This may be due to the lower density of residential areas here, but seeing as how less than 45% of NYC households have a car; one can infer that there is certainly a lot of repeat victims in these areas.
+
+
+And top 10 ticketing neighborhood in NYC are:
+
+
+* 2655 Richmond Ave, Staten Island (4,668 tickets)
+* 365 Bridge St, Brooklyn (3,374 tickets)
+* 1330 1st Ave, Manhattan (2,866 tickets)
+* 170 Joralemon St, Brooklyn (2,335 tickets)
+* 448 W 16th St, Manhattan (2,239 tickets)
+* 99 Warren St, Manhattan (2,049 tickets)
+* 355 Bard Ave, Staten Island (2,022 tickets)
+* 95-25 Queens Blvd, Rego Park (1,901 tickets)
+* 82-23 Broadway, Queens (1,788 tickets)
+* 204 Livingston St, Brooklyn (1,759 tickets) 
+	
+
+The following map shows the top 10 comlaints location and the locations have more than 200 complaints in the last six years. The birgger the circle is, the more complaints there are. 
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE}
+
+#======================================================================================================
+#Hottest location map
+
+
+check_hottest_point_all_map <- read.csv("C:/WorkStation/EDAV/Final_Project/data/check_hottest_point_all.csv", 
+                                        header= TRUE, sep=",",
+                                        quote = "\"", dec =".")
+
+
+check_hotpoint_map_illegal_parking_map <- read.csv("C:/WorkStation/EDAV/Final_Project/data/check_hotpoint_map_illegal_parking.csv", 
+                                                   header= TRUE, sep=",",
+                                                   quote = "\"", dec =".")
+
+
+
+check_hotpoint_map_blocked_driveway_map <- read.csv("C:/WorkStation/EDAV/Final_Project/data/check_hotpoint_map_blocked_driveway.csv", 
+                                                    header= TRUE, sep=",",
+                                                    quote = "\"", dec =".")
+
+
+
+
+
+top_ten_ticket <- read.csv("C:/WorkStation/EDAV/Final_Project/data/top_ten_ticketing.csv", 
+                           header= TRUE, sep=",",
+                           quote = "\"", dec =".")
+
+
+
+#Start to map__________________
+
+
+content_hottest_point_all <- paste0( "<strong>Address: </strong>", 
+                                     check_hottest_point_all_map$Address,
+                                     "<br><strong>Total Complaint Count: </strong>", 
+                                     check_hottest_point_all_map$ComplaintCount)
+
+content_hotpoint_map_illegal_parking_map <- paste0("<strong>Address: </strong>", 
+                                                   check_hotpoint_map_illegal_parking_map$Address,
+                                                   "<br><strong>Illegal Parking Complaint Count: </strong>", 
+                                                   check_hotpoint_map_illegal_parking_map$IllegalComplaintCount)
+
+content_hotpoint_map_blocked_driveway_map <- paste0("<strong>Address: </strong>",
+                                                    check_hotpoint_map_blocked_driveway_map$Address,
+                                                    "<br><strong>Blocked Driveway Complaint Count: </strong>", 
+                                                    check_hotpoint_map_blocked_driveway_map$BlockedComplaintCount)
+
+content_top_ten_ticket <-  paste0("<strong>Address: </strong>",
+                                  top_ten_ticket$Address,
+                                  "<br><strong>Ticket Count: </strong>", 
+                                  top_ten_ticket$Ticket_Account)
+
+myIcons <- icons(
+    iconUrl = "http://www.buyautoinsurance.com/wp-content/featured-content/seatbelt/images/traffic-ticket.png",
+    
+    iconWidth = 50, iconHeight = 50,
+    iconAnchorX = 12, iconAnchorY = 54
+)
+```
+
+```{r, echo=FALSE, fig.width=11, fig.height=7}
+
+#map it!
+map8 <- leaflet() %>% 
+    
+    setView(lng = -74.006605, lat = 40.714623, zoom = 11) %>%
+    
+    # Add tiles as baseGroup  
+    addProviderTiles("CartoDB.DarkMatter",group = "Dark Map") %>%
+    addProviderTiles("OpenStreetMap", group = "Basic Map") %>%
+    addProviderTiles("Esri.WorldImagery", group = "Satellite Map") %>%
+    
+    addMarkers(data=top_ten_ticket,lat = ~Latitude, lng = ~Longitude,
+               icon = myIcons,popup = ~(content_top_ten_ticket),group = "Top Ten Ticketing Location")%>%
+    
+    addCircles( data = check_hottest_point_all_map , color = "#F7FE2E",    
+                lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_hottest_point_all), radius = ~(ComplaintCount)*3, group = "All complaints")%>%
+    addCircles( data = check_hotpoint_map_illegal_parking_map , color = "#58FAF4",   
+                lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_hotpoint_map_illegal_parking_map), radius = ~(IllegalComplaintCount)*3, group = "Illegal Parking complaints")%>%
+    addCircles( data = check_hotpoint_map_blocked_driveway_map, color = "#F781F3", 
+                lat = ~Latitude, lng = ~Longitude,
+                popup = ~(content_hotpoint_map_blocked_driveway_map), radius = ~(BlockedComplaintCount)*3, group = "Blocked Driveway complaints")%>%
+    
+    
+    # Layers control
+    addLayersControl(
+        baseGroups = c("Dark Map","Basic Map","Satellite Map"),
+        overlayGroups = c("All complaints","Illegal Parking complaints","Blocked Driveway complaints","Top Ten Ticketing Location"),
+        
+        options = layersControlOptions(collapsed = FALSE)
+    ) %>% 
+    
+    hideGroup("All complaints") %>% 
+    
+    
+    
+    addLegend("topright", colors = c("#F7FE2E", "#58FAF4","#F781F3"), 
+              labels = c("All complaints", "Illegal Parking complaints","Blocked Driveway complaints"),    
+              opacity = 2,  title = "Complaint Type" ) 
+
+map8
+
+```
+
+#### **Click each icon or circle, you will see detail information**.
+
+<br>
+
+### Interactive Network
+The following networks of the descriptor, complaint types, year and main borough.The Main borough means that in the year in which borough one descripor happened most frequently. For example, in the year 2015 the complaint descriptor "Detached Trailer" happened in queens the most, the the main borough for this descriptor is "Queens".
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE}
+
+
+library(leaflet)
+library(maps)
+library(mapproj)
+library(RColorBrewer)
+library(classInt)
+library(googleVis)
+library(stringi) #capitalize letters
+library(lubridate)#extract year from date
+library(networkD3)
+
+
+
+#############################
+#                           #
+#       NetWork  D3         #
+#                           #
+#############################
+
+#================================================================================================
+
+#import data 
+newwork_data <- read.csv("C:/WorkStation/EDAV/Final_Project/data/google_motion_chart.csv", 
+                         header= TRUE, sep=",",
+                         quote = "\"", dec =".")
+newwork_data <- newwork_data[-c(64),]
+
+
+```
+
+#### **Interactive Network of Descriptors and Main Boroughs**
+#### **Click and drag the nodes to have interactive experience. Can zoom in and zoom out.**
+
+```{r, echo=FALSE, fig.width=11, fig.height=4}
+#descripter-borough
+network1 <- newwork_data[c(1,5)]
+colnames(network1) <- c("src","target")
+net_work_graph1 <- simpleNetwork(network1,  
+              fontSize = 14, 
+              fontFamily = "serif", linkColour = "#666",
+              nodeColour = "#3182bd", nodeClickColour = "#FE2E64", 
+              textColour = "#0B2161", opacity = 0.6, zoom = T)
+net_work_graph1
+
+
+```
+
+#### **Interactive Network of Complaint types and Descriptor**
+```{r, echo=FALSE, fig.width=11, fig.height=4}
+
+network2 <- newwork_data[c(1,4)]
+colnames(network2) <- c("src","target")
+
+net_work_graph2 <- simpleNetwork(network2, Source = NULL, Target = NULL, height = NULL, 
+              width = NULL, 
+              fontSize = 14, fontFamily = "serif", linkColour = "#666",
+              nodeColour = "#9AFE2E", nodeClickColour = "#FE2E64", 
+              textColour = "#084B8A", opacity = 0.6, zoom = T)
+
+net_work_graph2
+
+
+```
+
+#### **Interactive Network of Complaint types and Main Borough**
+
+```{r, echo=FALSE, fig.width=11, fig.height=4}
+network3 <- newwork_data[c(4,5)]
+colnames(network3) <- c("src","target")
+net_work_graph3 <- simpleNetwork(network3, Source = NULL, Target = NULL, height = NULL, 
+              width = NULL, 
+              fontSize = 14, fontFamily = "serif", linkColour = "#666",
+              nodeColour = "#F781F3", nodeClickColour = "#FE2E64", 
+              textColour = "#0B2161", opacity = 0.6, zoom = T)
+net_work_graph3
+```
+
+
+
+
+
+#### **Interactive Network of Descriptor and year**
+```{r, echo=FALSE, fig.width=11, fig.height=4}
+
+
+network4 <- newwork_data[c(2,4)]
+colnames(network4) <- c("src","target")
+net_work_graph4 <- simpleNetwork(network4, Source = NULL, Target = NULL, height = NULL, 
+              width = NULL, 
+              fontSize = 14, fontFamily = "serif", linkColour = "#666",
+              nodeColour = "#FF8000", nodeClickColour = "#FE2E64", 
+              textColour = "#084B8A", opacity = 0.6, zoom = T)
+
+net_work_graph4
+```
+
+##Resolution Analysis
+
+![classified_resolution](C:\WorkStation\EDAV\Final_Project\image\classified_resolution.jpg)
+The resolutions of the parking related complaints can be classified into 3 types: response, rejection and action. 
+For each type, there are several resolutions:
+
+* Action: take action to fix, issue a summons, the condition ends
+* Rejection: no evidence, not necessary
+* Response: provide information, insufficient contact, unprocessed, prepare report.
+    
+From the pie chart, we can clearly see that For most complaints, NYPD took some actions to solve the problem.
+![solutioin_by_complaint_type](C:\WorkStation\EDAV\Final_Project\image\solutioin_by_complaint_type.jpg)
+
+This graph shows that the types of complaints have different distributions of resolution type. Most rejected and unresolved problems are illegal parking. Issuing a summons mostly results from blocked driveway.
+
+###Interactive Heatmap for Complaint counts
+The following is the heatmap for comlaint counts. The x variable is the resolutions and the y variable is the descriptor. From this chart, we can see which pair of descriptor and resolution has large amount of complaints by color. Click each cell, you will see detail information.
+
+![heatmap](C:\WorkStation\EDAV\Final_Project\image\heatmap.png)
+
+
+#### **Please check the heatmap.html in our project folder to have an interactive experience.**
+
+
+
+### Case Study: Use highchart 
+
+
+```{r echo=FALSE, results='hide',message=FALSE, warning=FALSE, error=FALSE}
+#=================================================================================
+#############################
+#                           #
+#    highcharter            #
+#                           #
+#############################
+
+#install.packages("magrittr")
+#install.packages("highcharter")
+library(magrittr)
+library(highcharter)
+
+
+
+highcharter_data <- read.csv("C:/WorkStation/EDAV/Final_Project/data/google_motion_chart.csv", 
+                             header= TRUE, sep=",",
+                             quote = "\"", dec =".")
+highcharter_data <- highcharter_data[-c(64),]
+```
+
+```{r, echo=FALSE, fig.width=11, fig.height=5}
+highchart() %>% 
+    hc_title(text = "Police Action not Necessary vs. No Evidence of violation") %>% 
+    hc_add_serie_scatter(highcharter_data$police_action_not_necessary, highcharter_data$no_evidence_of_violation,
+                         highcharter_data$Descriptor_Count, highcharter_data$no_evidence_of_violation )
+
+
+
+```
+Police action not necessary and no evidence of violation is positively related. 
+
+<br>
+
+##Predict Complaint Amount Using Weather Information
+One of important issue we want to discover is the impact of weather especially precipitation and temperature on the complaint amount. Based on our past experience, weather should have a business in changing complaint levels. For example, a heavy rain may cause a larger amount of complaints because it might lead to some problems such as traffic jam. However, our result shows the opposite. The reason of this outcome is that people are unwilling to go outside when it has a heavy rain. 
+The weather data for this analysis is from online weather history data of New York City including precipitation and temperature per day. Also, we computed the total complaint amounts and settlement time by day.  Because the 311 dataset is very large, we selected the data from Jan to Feb and Sep to Oct. The time of Jan to Feb has more snow so that we can discover the relationship between complaint level and precipitation. The same goes to the time duration of Sep to Oct for analysing temperature.
+
+
+First, as shown in the below plot, we found that, in a certain temperature range, the complaint frequency goes up and down with temperature simultaneously. However, it becomes the opposite if temperature changes dramatically
+
+
+
+
+![complaint_freq_with_temp](C:\WorkStation\EDAV\Final_Project\image\complaint_freq_with_temp.png)
+
+Also, we would like to see how the temperature affects the length of complaint settlement time. Comparing to the previous graph of temp and complaint freq, the settlement time always moves with temp in the same direction even when temp changes dramatically(maybe officer just want to leave fast)
+
+![settle_time_temp](C:\WorkStation\EDAV\Final_Project\image\settle_time_temp.png)
+
+
+
+On the other hand, precipitation plays a large role in both complaint frequency. The plot below indicates that, In the most cases, complaint frequency decreases when it has snow or rain (might because people do not go out), but rises rapidly right after the snow (because of the snow on the road).
+
+
+![complaint_freq_with_precipitation](C:\WorkStation\EDAV\Final_Project\image\complaint_freq_with_precipitation.png)
+
+Lastly, precipitation is more likely to shorten the settlement time of complaints. The following graph shows the same pattern as the one above; the settlement time would be shorter if it has a snow outside.
+
+![settle_time_perc](C:\WorkStation\EDAV\Final_Project\image\settle_time_perc.png)
+
+
+##Average Settlement Time Analysis
+
+Previously we have discussed the influence of complaint location (e.g. borough, community board etc.) and complaint time and date on various factors that characterize the work of NYPD in response to illegal parking complaints coming from citizens through 311 hotline. Among others we discussed response action, number of complaints and type of violation as explained factors, and in this part we would like to focus on the settlement time of each complaint (e.g. duration till resolution) and try to explore factors that can explain this variable over the course of the last 5 years. All in all, resolution time can be considered as one of the most important and interesting variables to explain, as it can be truly considered as a measure of efficiency of such citizenship tool as 311 complaint hotline. The faster the resolution time, the more efficient the service is, thus we will investigate relationships between settlement time and other time and geography parameters below.
+
+First, we prepare dataset deriving the features of interest that are potential influencers on settlement time.
+
+The features that are left in the dataset are:
+
+* Created.Date: serves as an anchor timestamp in further analysis
+* Latitude and Longitude: pair of geocoordinates describing the location of a particular complaint
+* Duration: the feature of interest, the difference between created date and closed date
+* short: short description of action or response from the competent authority, in this case NYPD
+* Descriptor: broad type of complaint registered
+* Year: year of complaint registered
+* Month: month of complaint registered
+* Weekday: weekday of complaint registered
+* Late: logical flag, whether the closed date was over the due date or, in other words, whether the response from NYPD came after the promised response time ended
+* Borough: borough, where the complaint was registered
+* Community Board: community board, where the complaint was registered
+
+These features describe the type of complaint and its resolution, time the complaint was observed and area where the complaint occurred.
+
+The first observation that we make from the duration distribution pattern is the skewness of its shape towards zero, which is obviously a positive sign. Probability distributions modeling such mass service events like waiting time in the queue are generally described with exponential family distributions, however this distribution is approximated by the frequency shape that has some very significant outliers, thus quite heavy right tail of the distribution shape. Obviously, this might be a sign of inconsistency in data input / closing complaints / etc, which is a commonplace during the establishment period of any mass service, however we will eliminate this observations from further analysis and restrict the observations to have settlement time no more than 5 days.
+
+![redpic](C:\WorkStation\EDAV\Final_Project\image\redpic.png)
+
+
+The following observations are aggregated by a set of the variables of interest and the following interesting facts are observed:
+
+* Average settlement time (AST) is dependent on the borough, where the corresponding complaint was registered. The logic is very intuitive - the bigger the borough is, the more time it will take for police patrolling units to reach out the violation location and take required actions. To demonstrate this correlation we put the population size of the boroughs on this chart for visual comparison.
+* AST also tends to grow year-over-year, which is actually contr-intuitive, since what we were expecting was the opposite: the more time passes by, the more experience NYPD obtains working with 311 complaint feed, the faster and more efficient their actions are. However, in practice we observe the pattern, where the AST grows consistently along with the number of complaints registered through 311. It is difficult to explain this correlation directly, but assuming that these two things indeed correlate with each other, we can hypothesise that the reason the AST is growing is the lack of patrolling units and outburst of parking complaints growing as citizens' awareness of the 311 hotline grows.
+* The correlations of AST with month of the year and day of the week are also quite vague, however we can see that there is a considerable variance in AST, thus these two features are probably important for the next discussions. What we expected is lower AST during summer months growing steadily towards winter (e.g. colder) months, and lower AST during weekends compared to weekdays (more cars, more traffic during weekdays).
+   
+![settlement](C:\WorkStation\EDAV\Final_Project\image\settlement.png)
+
+To demonstrate joint dynamics between these features we will deploy the following bubble motion plot:
+
+* each bubble corresponds to one of the NYC boroughs - one of our dimensions of interest;
+* X and Y axes will correspond to AST and its standard deviation;
+* size of each bubble corresponds to the number of complaints registered in the borough on the the given year;
+* color of the bubble is the percentage of the late responses in the given borough on the given year
+
+![motion11](C:\WorkStation\EDAV\Final_Project\image\motion11.png)
+![motion22](C:\WorkStation\EDAV\Final_Project\image\motion22.png)
+![motion33](C:\WorkStation\EDAV\Final_Project\image\motion33.png)
+![motion44](C:\WorkStation\EDAV\Final_Project\image\motion44.png)
+
+The results reveal some very interesting and useful patterns. First of all, the relative size of the bubbles stays almost the same over the course of all 5.5 years observed in the dataset. That shows that the distribution of complaints around NYC boroughs stays roughly the same, while the overall amount of complaints grows year over year. The second important trend is the fact that average resolution time and its standard deviation demonstrate roughly linear relationship, such as when average time grows, its std deviation grows as well. This follows the initial logic, where the more complaints are registered, the more difficult it is to deal with all of them with NYPD patrol units, so some of the cases begin to be closed within a considerable amount of time. And the third and final important pattern that is clearly seen on the graph - we can very well differentiate boroughs by their relative efficiency. The most problematic borough is the Bronx, since its average settlement time increases dramatically during the past two years along with its standard deviation. Brooklyn and Queens also demonstrate not as good results as Manhattan and Staten Island, and the worse the borough has average time, the bigger percentage of the late responses is observed in it. This chart certainly lets us make one extremely important assessment conclusion: **the Bronx, Queens and Brooklyn are struggling with the lack of road police headcount, since the number of complaints is high and performance KPIs are extremely low.** This can be a call for action to NYPD, that clearly needs to improve this situation as soon as possible.
+
+<br>
+The following chart also demonstrates an attempt to find the principal components of the dataset featured in the prior analysis. As it can be seen, the first two PCs explain only up to 35% of total variance in the dataset and the following 4 PCs are pretty stable and take another 12-13% each. This structure emphasizes the robust nature and good selection of the features selected for this analysis.
+
+
+![screePlot](C:\WorkStation\EDAV\Final_Project\image\screePlot.png)
+
+<br>
+
+###Importance of Doing this Project (not relevant but maybe useful):
+The success of the project revolves around the three factors e.g. time, budget and quality. The EDAV team concentrates on providing great quality of work within time and budget constraints and according to project management guidelines. Their sole purpose of doing this project is to reduce cost, increase efficiency, minimizing the risk and easy accessibility to the public.  Since technology is always evolving to meet the changing needs of users. EDAV team has approached in the same way by keeping themselves intact to the technology to meet the needs of the public.
+
+<br>
+
+##Conclusion
+
+With respect to the data on Illegal parking, Tickets and Violation and towing in New York City, we the EDAV team have revealed some basic facts about the types of violations that are most likely in certain times and places in the city.  Tickets for parking in illegal zones, as well as usually violations for blocking traffic, such as double parking, tend to be the most common in areas with greater commercial concentration or traffic.  Furthermore, when fine (penalty) amounts are considered, the two business districts are the most risky for drivers in the City.  These types of violations often occur as a result of a driver needing to stop temporarily in a busy area where parking is scarce; hence, they might try to park in a loading zone or double-park for a few minutes to avoid having to search for a parking spot.  Finally, using data analysis, we see that the ticket observations can be separated into distinct groups based on the type of violation and the day of issuance; however, based on these attributes alone, the geographic location cannot be identified with great certainty.
+Lastly, in practical terms it would be desirable to apply the knowledge gained to assist with City operational or budgetary planning (cost estimation done by EDAV team), such as allocating traffic enforcement officers to different regions and for this purpose EDAV team is up to it.
+
